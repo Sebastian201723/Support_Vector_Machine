@@ -46,25 +46,32 @@ class Support_Vector_Machine:
                     for transformation in transforms:
                         w_t = w*transformation
                         found_option = True
+                        # weakest link in the SVM fundamentally
+                        # SMO attempts to fix this a bit
+                        # yi(xi.w+b) >= 1
+                        # 
+                        # #### add a break here later..
                         for i in self.data:
                             for xi in self.data[i]:
-                                yi = i 
-                                if not yi*(np.dot(w_t,xi)+b)>=1:
+                                yi=i
+                                if not yi*(np.dot(w_t,xi)+b) >= 1:
                                     found_option = False
-                                    break
-                    if found_option:
-                        opt_dict[np.linalg.norm[w_t]]=[w_t,b]
-            if w[0]<0:
-                optimized = True
-                print('optimized a step')
-            else: 
-                w = w - step
-        norms = sorted([n for n in opt_dict])
-        opt_choice = opt_dict[norms[0]]
-        self.w = opt_choice[0]
-        self.b = opt_choice[1]
-        latest_optimum = opt_choice[0][0]
+                                    
+                        if found_option:
+                            opt_dict[np.linalg.norm(w_t)] = [w_t,b]
 
+                if w[0] < 0:
+                    optimized = True
+                    print('Optimized a step.')
+                else:
+                    w = w - step
+
+            norms = sorted([n for n in opt_dict])
+            #||w|| : [w,b]
+            opt_choice = opt_dict[norms[0]]
+            self.w = opt_choice[0]
+            self.b = opt_choice[1]
+            latest_optimum = opt_choice[0][0]+step*2
     # sign(x.w+b). 
     # Feasures represents the values to classify; We don't know w and b yet
     def predict(self,feasures):
