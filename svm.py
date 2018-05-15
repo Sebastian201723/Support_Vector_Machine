@@ -15,34 +15,39 @@ class Support_Vector_Machine:
     def fit(self, data):
         self.data =data
         #{ ||w||:[w,b]}
-        opt_dict = {}#Set our dictionary for saving w and b
+        #Initialize our dictionary saving w and b
+        opt_dict = {}
         transforms = [[1,1], [1,-1],[-1,-1],[-1,1]]
+        #finding the highest and lowest values
         all_data = []
         for yi in self.data:
-            for feasureset in self.data[yi]:
-                for feasure in feasureset:
-                    all_data.append(feasure)
-        self.max_feasure_value = max(all_data)
-        self.min_feasure_value = min(all_data)
-        all_data = None
+            for featureset in self.data[yi]:
+                for feature in featureset:
+                    all_data.append(feature)
 
-        step_sizes = [self.max_feasure_value*0.1,
-                      self.max_feasure_value*0.01,
-                      self.max_feasure_value*0.001]
-        #Extremely expensive
+        self.max_feature_value = max(all_data)
+        self.min_feature_value = min(all_data)
+        all_data = None#Saves memory
+
+        step_sizes = [self.max_feature_value * 0.1,
+                      self.max_feature_value * 0.01,
+                      # starts getting very high cost after this.
+                      self.max_feature_value * 0.001]
+        
+           # extremely expensive
         b_range_multiple = 5
-        #
         b_multiple = 5
-
-        latest_optimum = self.max_feasure_value*10
+        latest_optimum = self.max_feature_value*10
         for step in step_sizes:
             w = np.array([latest_optimum,latest_optimum])
-            #We can do this because convex
+            # we can do this because convex
             optimized = False
-            while not optimized: 
-                for b in np.arange(-1*(self.max_feasure_value*b_range_multiple),
-                                   self.max_feasure_value*b_range_multiple,
+            while not optimized:
+                for b in np.arange(-1*(self.max_feature_value*b_range_multiple),
+                                   self.max_feature_value*b_range_multiple,
                                    step*b_multiple):
+                    # iterate through each of the transformations,
+                    #testing each of them against our constraint requirements.
                     for transformation in transforms:
                         w_t = w*transformation
                         found_option = True
@@ -74,31 +79,48 @@ class Support_Vector_Machine:
             latest_optimum = opt_choice[0][0]+step*2
     # sign(x.w+b). 
     # Feasures represents the values to classify; We don't know w and b yet
-    def predict(self,feasures):
-        classification = np.sign(np.dot(np.array(feasures),self.w)+self.b)
-        if classification !=0 and self.visualization:
-            self.ax.scatter(feasures[0],feasures[1],s=200,marker='*', c=self.colors[classification])
+    def predict(self,features):
+        # classifiction is just:
+        # sign(xi.w+b)
+        classification = np.sign(np.dot(np.array(features),self.w)+self.b)
+        # if the classification isn't zero, and we have visualization on, we graph
+        if classification != 0 and self.visualization:
+            self.ax.scatter(features[0],features[1],s=200,marker='*', c=self.colors[classification])
+        else:
+            print('featureset',features,'is on the decision boundary')
         return classification
     def visualize(self):
-        [[self.ax.scatter(x[0],x[1],s=100,color=self.colors[i]) for x  in data_dict[i]] for i in data_dict]
-        #hyperplate = 
-        def hyperplanes(x,w,b,v):
-            return (-w[0]*x-b+v)/w[1]
-        datarange = (self.min_feasure_value*0.9, self.max_feasure_value*1.1)
+        [[self.ax.scatter(x[0],x[1],s=100,color=self.colors[i]) for x in data_dict[i]] for i in data_dict]
+
+        # hyperplane = x.w+b
+        # v = x.w+b
+        # psv = 1
+        # nsv = -1
+        # dec = 0
+        def hyperplane(x,w,b,v):
+            return (-w[0]*x-b+v) / w[1]
+
+        datarange = (self.min_feature_value*0.9,self.max_feature_value*1.1)
         hyp_x_min = datarange[0]
         hyp_x_max = datarange[1]
 
-        psv1 = hyperplanes(hyp_x_min,self.w,self.b,1)
-        psv2 = hyperplanes(hyp_x_max,self.w,self.b,1)
-        self.ax.plot([],[hyp_x_min, hyp_x_max],[psv1,psv2])
+        # (w.x+b) = 1
+        # positive support vector hyperplane
+        psv1 = hyperplane(hyp_x_min, self.w, self.b, 1)
+        psv2 = hyperplane(hyp_x_max, self.w, self.b, 1)
+        self.ax.plot([hyp_x_min,hyp_x_max],[psv1,psv2], 'k')
 
-        nsv1 = hyperplanes(hyp_x_min,self.w,self.b,1)
-        nsv2 = hyperplanes(hyp_x_max,self.w,self.b,1)
-        self.ax.plot([],[hyp_x_min, hyp_x_max],[nsv1,nsv2])
+        # (w.x+b) = -1
+        # negative support vector hyperplane
+        nsv1 = hyperplane(hyp_x_min, self.w, self.b, -1)
+        nsv2 = hyperplane(hyp_x_max, self.w, self.b, -1)
+        self.ax.plot([hyp_x_min,hyp_x_max],[nsv1,nsv2], 'k')
 
-        db1 = hyperplanes(hyp_x_min,self.w,self.b,1)
-        db2 = hyperplanes(hyp_x_max,self.w,self.b,1)
-        self.ax.plot([],[hyp_x_min, hyp_x_max],[db1,db2])
+        # (w.x+b) = 0
+        # positive support vector hyperplane
+        db1 = hyperplane(hyp_x_min, self.w, self.b, 0)
+        db2 = hyperplane(hyp_x_max, self.w, self.b, 0)
+        self.ax.plot([hyp_x_min,hyp_x_max],[db1,db2], 'y--')
 
         plt.show()
 
